@@ -90,7 +90,7 @@ function run()
 # $@    All further commands to pacman
 function run_pacman()
 {
-    pacman \
-        --noconfirm \
-        $@
+  pacman \
+    --noconfirm \
+    $@
 }

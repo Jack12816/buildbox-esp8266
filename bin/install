@@ -21,21 +21,21 @@ Server = http://repo.archlinux.fr/\$arch
 EOF
 
 run 'Update package repositories' \
-    run_pacman -Syy
+  run_pacman -Syy
 
 run 'Update keyring' \
-    run_pacman -S archlinux-keyring
+  run_pacman -S archlinux-keyring
 
 run 'Update pacman' \
-    run_pacman -S pacman
+  run_pacman -S pacman
 
 run 'Update pacman database' \
-    pacman-db-upgrade
+  pacman-db-upgrade
 
 run 'Install build packages' run_pacman -S \
-    yaourt sudo bash bash-completion base-devel python2 \
-    curl wget sudo rsync yaourt abs pkgfile \
-    gdb gperf unzip git
+  yaourt sudo bash bash-completion base-devel python2 \
+  curl wget sudo rsync yaourt abs pkgfile \
+  gdb gperf unzip git
 
 echo 'Create builder user'
 groupadd -g1000 builder
@@ -57,13 +57,13 @@ cp "${INSTALL_DIR}/config/.bashrc" /home/builder/.bashrc
 chmod +x /home/builder/.bashrc /home/builder/.bash_profile
 
 run 'Download the xtensa toolchain' \
-    cd /opt \&\& \
-    wget -O tc.tar.gz http://arduino.esp8266.com/linux64-xtensa-lx106-elf-gb404fb9.tar.gz
+  cd /opt \&\& \
+  wget -O tc.tar.gz http://arduino.esp8266.com/linux64-xtensa-lx106-elf-gb404fb9.tar.gz
 
 run 'Extract the xtensa toolchain' \
-    cd /opt \&\& \
-    tar xfv tc.tar.gz -C /opt \&\& \
-    rm tc.tar.gz
+  cd /opt \&\& \
+  tar xfv tc.tar.gz -C /opt \&\& \
+  rm tc.tar.gz
 
 echo 'Setup paths to the xtensa toolchain'
 echo 'export PATH=/opt/xtensa-lx106-elf/bin:$PATH' >> /root/.bashrc
@@ -74,15 +74,15 @@ echo 'Setup temporary directory'
 mkdir -p /tmp && chmod ugo+rwx /tmp
 
 run 'Install esptool' \
-    run_as_user yaourt --noconfirm -S esptool-git
+  run_as_user yaourt --noconfirm -S esptool-git
 
 run 'Clone the esptool-ck git repository' \
-    cd /opt \&\& \
-    git clone https://github.com/tommie/esptool-ck.git
+  cd /opt \&\& \
+  git clone https://github.com/tommie/esptool-ck.git
 
 run 'Build the esptool-ck' \
-    cd /opt/esptool-ck \&\& \
-    make
+  cd /opt/esptool-ck \&\& \
+  make
 
 echo 'Setup paths to the esptool-ck'
 echo 'export PATH=/opt/esptool-ck:$PATH' >> /root/.bashrc
@@ -90,4 +90,4 @@ echo 'export PATH=/opt/esptool-ck:$PATH' >> /home/builder/.bashrc
 sed -i 's#PATH="\(.*\)"#PATH="/opt/esptool-ck:\1"#g' /etc/profile
 
 run 'Cleanup packages caches' \
-    rm -rf /var/cache/pacman/pkg
+  rm -rf /var/cache/pacman/pkg
