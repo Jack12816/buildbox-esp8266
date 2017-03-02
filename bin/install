@@ -1,0 +1,93 @@
+#!/bin/bash
+set -e
+
+# Get the full path of the current file, no matter where it being called from
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )";
+cd "${DIR}/.."
+
+# Load the env lib
+source bin/env
+
+HOME="/root"
+INSTALL_DIR="/app"
+
+export TERM="xterm-256color"
+
+echo 'Setup yaourt package source'
+cat >> /etc/pacman.conf <<EOF
+[archlinuxfr]
+SigLevel = Never
+Server = http://repo.archlinux.fr/\$arch
+EOF
+
+run 'Update package repositories' \
+    run_pacman -Syy
+
+run 'Update keyring' \
+    run_pacman -S archlinux-keyring
+
+run 'Update pacman' \
+    run_pacman -S pacman
+
+run 'Update pacman database' \
+    pacman-db-upgrade
+
+run 'Install build packages' run_pacman -S \
+    yaourt sudo bash bash-completion base-devel python2 \
+    curl wget sudo rsync yaourt abs pkgfile \
+    gdb gperf unzip git
+
+echo 'Create builder user'
+groupadd -g1000 builder
+useradd -u1000 -g1000 --system --home-dir /home/builder -m builder
+
+echo 'Enable password-less sudoing for builder user'
+cat >> /etc/sudoers <<EOF
+builder ALL = NOPASSWD: ALL
+EOF
+
+echo 'Setup profile files for root'
+cp "${INSTALL_DIR}/config/.bash_profile" /root/.bash_profile
+cp "${INSTALL_DIR}/config/.bashrc" /root/.bashrc
+chmod +x /root/.bashrc /root/.bash_profile
+
+echo 'Setup profile files for builder ...'
+cp "${INSTALL_DIR}/config/.bash_profile" /home/builder/.bash_profile
+cp "${INSTALL_DIR}/config/.bashrc" /home/builder/.bashrc
+chmod +x /home/builder/.bashrc /home/builder/.bash_profile
+
+run 'Download the xtensa toolchain' \
+    cd /opt \&\& \
+    wget -O tc.tar.gz http://arduino.esp8266.com/linux64-xtensa-lx106-elf-gb404fb9.tar.gz
+
+run 'Extract the xtensa toolchain' \
+    cd /opt \&\& \
+    tar xfv tc.tar.gz -C /opt \&\& \
+    rm tc.tar.gz
+
+echo 'Setup paths to the xtensa toolchain'
+echo 'export PATH=/opt/xtensa-lx106-elf/bin:$PATH' >> /root/.bashrc
+echo 'export PATH=/opt/xtensa-lx106-elf/bin:$PATH' >> /home/builder/.bashrc
+sed -i 's#PATH="\(.*\)"#PATH="/opt/xtensa-lx106-elf/bin:\1"#g' /etc/profile
+
+echo 'Setup temporary directory'
+mkdir -p /tmp && chmod ugo+rwx /tmp
+
+run 'Install esptool' \
+    run_as_user yaourt --noconfirm -S esptool-git
+
+run 'Clone the esptool-ck git repository' \
+    cd /opt \&\& \
+    git clone https://github.com/tommie/esptool-ck.git
+
+run 'Build the esptool-ck' \
+    cd /opt/esptool-ck \&\& \
+    make
+
+echo 'Setup paths to the esptool-ck'
+echo 'export PATH=/opt/esptool-ck:$PATH' >> /root/.bashrc
+echo 'export PATH=/opt/esptool-ck:$PATH' >> /home/builder/.bashrc
+sed -i 's#PATH="\(.*\)"#PATH="/opt/esptool-ck:\1"#g' /etc/profile
+
+run 'Cleanup packages caches' \
+    rm -rf /var/cache/pacman/pkg

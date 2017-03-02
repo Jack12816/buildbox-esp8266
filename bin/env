@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# @author Hermann Mayer <hermann.mayer92@gmail.com>
+
+# Retry a passed command multiple times
+#
+# $1-n  The command to process
+function retry()
+{
+  if eval "$@"; then
+    return 0
+  fi
+
+  for i in 2 1; do
+    sleep 3s
+    echo "Retrying $i..."
+    if eval "$@"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Suppress big outputs with dots, in case of error show
+# the full output
+#
+# $1-n  The command to run
+function dots()
+{
+  log=$(mktemp)
+
+  eval $@ 2>&1 | while read line; do
+    if [ -n "${line}" ]; then
+      echo -n '.'
+      echo "${line}" >> "${log}"
+    fi
+  done
+
+  EXITCODES=( "${PIPESTATUS[@]}" )
+
+  if [[ "${EXITCODES[*]/0/}" =~ [1-9] ]]; then
+    cat ${log}
+    echo -e "\nExit code: -${EXITCODES[0]}-"
+    return 1
+  fi
+  echo
+  rm ${log}
+}
+
+# Time a given command
+#
+# $1    The comment we should show about this timing
+# $2-n  The command we should run
+function stop_time()
+{
+  prefix=${1}
+  shift 1
+  start_date=`date +%s`
+  $@
+  local ret=$?
+  total=$(date -u --date @$((`date +%s` - $start_date)) +%kh:%Mm:%Ss)
+  echo -ne "\e[1;32m${prefix}:" \
+    "\e[1;35m${total}\e[0m\n"
+  return $ret
+}
+
+# Run a command as the application user
+#
+# $1-n  The command to run
+function run_as_user()
+{
+  sudo -HEu builder -s $@
+  return $?
+}
+
+# Run a command with stop watch, dots outputs and retry.
+#
+# $1    The comment we should show about this timing
+# $2-n  The command we should run
+function run()
+{
+  comment=${1}
+  echo -n "${comment} "
+  shift 1
+  stop_time "${comment}" dots retry $@
+}
+
+# Run the package manager with some custom settings
+#
+# $@    All further commands to pacman
+function run_pacman()
+{
+    pacman \
+        --noconfirm \
+        $@
+}

@@ -1,0 +1,35 @@
+#!/bin/bash
+
+VERSION=$1
+
+function nextMajorVersion()
+{
+    local MAJOR="`echo $1 | cut -d'.' -f1`"
+    local MINOR="`echo $1 | cut -d'.' -f2`"
+    local BUGFIX="`echo $1 | cut -d'.' -f3`"
+    echo $(($MAJOR + 1)).0.0
+}
+
+function nextMinorVersion()
+{
+    local MAJOR="`echo $1 | cut -d'.' -f1`"
+    local MINOR="`echo $1 | cut -d'.' -f2`"
+    local BUGFIX="`echo $1 | cut -d'.' -f3`"
+    echo $MAJOR.$(($MINOR + 1)).0
+}
+
+function nextBugfixVersion()
+{
+    local MAJOR="`echo $1 | cut -d'.' -f1`"
+    local MINOR="`echo $1 | cut -d'.' -f2`"
+    local BUGFIX="`echo $1 | cut -d'.' -f3`"
+    echo $MAJOR.$MINOR.$(($BUGFIX + 1))
+}
+
+dialog --radiolist "${3}The current image version is ${VERSION}" 0 90 4 \
+    "$(nextMajorVersion $VERSION)" "Next major version" off \
+    "$(nextMinorVersion $VERSION)" "Next minor version" on \
+    "$(nextBugfixVersion $VERSION)" "Next bugfix version" off 2>$2 \
+    || exit 1
+
+dialog --yesno "${3}The next image version will be `cat $2`.\n\nIs this correct?" 9 90
