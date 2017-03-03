@@ -51,7 +51,7 @@ cp "${INSTALL_DIR}/config/.bash_profile" /root/.bash_profile
 cp "${INSTALL_DIR}/config/.bashrc" /root/.bashrc
 chmod +x /root/.bashrc /root/.bash_profile
 
-echo 'Setup profile files for builder ...'
+echo 'Setup profile files for builder'
 cp "${INSTALL_DIR}/config/.bash_profile" /home/builder/.bash_profile
 cp "${INSTALL_DIR}/config/.bashrc" /home/builder/.bashrc
 chmod +x /home/builder/.bashrc /home/builder/.bash_profile
